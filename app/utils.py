@@ -27,7 +27,8 @@ from pathlib import Path
 import tempfile
 from typing import Generator
 
-from eark_validator.model import StructureStatus, ValidationReport  # noqa: E501
+from eark_validator.model import StructureStatus, ValidationReport
+from eark_validator.model.validation_report import MetadataStatus, Result, Severity  # noqa: E501
 
 TEMP = tempfile.gettempdir()
 UPLOADS_TEMP = os.path.join(TEMP, 'ip-uploads')
@@ -51,15 +52,14 @@ def chunk_file(file: tempfile.SpooledTemporaryFile, buff_size=4096) -> Generator
 class ResultSummary():
     def __init__(self, report: ValidationReport):
         self.errors, self.warnings, self.infos = _get_message_summary(report)
-        self.structure = report.structure.status
-        self.schema = report.metadata.schema_results if report.metadata else None
-        self.schematron = report.metadata.schematron_results if report.metadata else None
+        self.structure_status = report.structure.status
+        self.metadata_status = MetadataStatus.VALID if (report.metadata.schema_results.status == report.metadata.schematron_results.status == MetadataStatus.VALID) else MetadataStatus.INVALID
+        self.schema = report.metadata.schema_results.messages if report.metadata and report.metadata.schema_results else None
+        self.schematron = report.metadata.schematron_results.messages if report.metadata and report.metadata.schematron_results else None
 
     @property
     def is_valid(self) -> bool:
-        return self.structure.upper() == StructureStatus.WELLFORMED.upper() and \
-            len(self.schema) == 0 and \
-            len(self.schematron) == 0
+        return self.structure_status.upper() == StructureStatus.WELLFORMED.upper() and self.metadata_status == MetadataStatus.VALID
 
     @property
     def result(self):
@@ -67,7 +67,7 @@ class ResultSummary():
 
     def __repr__(self):
         return '{ResultSummary: { "is_valid"="%s", "result"="%s", "structure"="%s", "schema"="%s", "schematron"="%s"}}' \
-                % (self.is_valid, self.result, self.structure, self.schema, self.schematron)
+                % (self.is_valid, self.result, self.structure_status, self.schema, self.schematron)
 
 def compare_reports(rep_one, rep_two):
     if not rep_one:
@@ -84,20 +84,20 @@ def _get_message_summary(report: ValidationReport):
     all_messages = []
     if report.structure:
         all_messages += report.structure.messages
-    if report.metadata and report.metadata.schema_results:
-        all_messages += report.metadata.schema_results
-    if report.metadata and report.metadata.schematron_results:
-        all_messages += report.metadata.schematron_results
+    if report.metadata and report.metadata.schema_results and report.metadata.schema_results.messages:
+        all_messages += report.metadata.schema_results.messages
+    if report.metadata and report.metadata.schematron_results and report.metadata.schematron_results.messages:
+        all_messages += report.metadata.schematron_results.messages
     return _count_message_types(all_messages)
 
-def _count_message_types(messages):
+def _count_message_types(messages: list[Result]):
     infos = 0
     warns = 0
     errs = 0
     for message in messages:
-        if message.severity.casefold() == 'information':
+        if message.severity == Severity.INFORMATION:
             infos+=1
-        elif message.severity.casefold() == 'warning':
+        elif message.severity == Severity.WARNING:
             warns+=1
         else:
             errs+=1

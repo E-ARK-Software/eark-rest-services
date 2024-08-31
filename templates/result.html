@@ -3,7 +3,7 @@
 {% block page_content %}
 <h1>E-ARK IP Online Validator</h1>
 {% if python_report is defined %}
-<p>Package: {{ python_report.package.name }}</p>
+<p>Package: {{ python_report.package.details.name }}</p>
 {% endif %}
 <p>Uploaded On: {{ timestamp }}</p>
 <h2>Validation Result: {{ compliance_badge(compliance) }}</h2>
@@ -87,8 +87,8 @@
 
 {% if report.metadata is defined %}
   <h4>Metadata requirement Checks: {{ metadata_badge(report.metadata) }}</h4>
-  {% if (report.metadata.schema_results is defined and report.metadata.schema_results|length > 0) or
-    (report.metadata.schematron_results is defined and report.metadata.schematron_results|length > 0) %}
+  {% if (report.metadata.schema_results is defined and report.metadata.schema_results.messages|length > 0) or
+    (report.metadata.schematron_results is defined and report.metadata.schematron_results.messages|length > 0) %}
   <table class="table table-striped" data-toggle="table">
     <thead class="thead-dark">
       <tr>
@@ -99,7 +99,7 @@
     </thead>
     <tbody>
     {% if report.metadata.schema_results is defined %}
-      {% for message in report.metadata.schema_results %}
+      {% for message in report.metadata.schema_results.messages %}
         <tr>
           <td><a href="https://earkcsip.dilcis.eu/#53-use-of-mets">METS XML</a></td>
           <td>{{ severity_badge(message.severity) }}</td>
@@ -108,7 +108,7 @@
       {% endfor %}
     {% endif %}
     {% if report.metadata.schematron_results is defined %}
-      {{ prop_rows(report.metadata.schematron_results) }}
+      {{ prop_rows(report.metadata.schematron_results.messages) }}
     {% endif %}
     </tbody>
   </table>
@@ -182,19 +182,19 @@
 {% endmacro %}
 
 {% macro struct_badge(status) %}
-  <span class="{{ struct_badge_class(status) }}">{% if status == 'Well Formed' %}PASSED{% else %}FAILED{% endif %}</span>
+  <span class="{{ struct_badge_class(status) }}">{% if status|lower == 'wellformed' %}PASSED{% else %}FAILED{% endif %}</span>
 {% endmacro %}
 
 {% macro struct_badge_class(status) %}
-  badge badge-{% if status == 'Well Formed' %}success{% else %}danger{% endif %}
+  badge badge-{% if status|lower == 'wellformed' %}success{% else %}danger{% endif %}
 {% endmacro %}
 
 {% macro severity_badge(severity) %}
-  <span class="{{ severity_badge_class(severity) }}">{% if severity == 'Error' %}Error{% elif  severity == 'Warning' %}Warning{% else %}Note{% endif %}</span>
+  <span class="{{ severity_badge_class(severity) }}">{% if severity|lower == 'error' %}Error{% elif  severity|lower == 'warn' %}Warning{% else %}Note{% endif %}</span>
 {% endmacro %}
 
 {% macro severity_badge_class(severity) %}
-  badge badge-{% if severity == 'Error' %}danger{% elif  severity == 'Warning' %}warning{% else %}info{% endif %}
+  badge badge-{% if severity|lower == 'error' %}danger{% elif  severity|lower == 'warn' %}warning{% else %}info{% endif %}
 {% endmacro %}
 
 {% macro rule_link(rule_id) %}

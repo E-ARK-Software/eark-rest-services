@@ -22,6 +22,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import logging
 from datetime import datetime
 from typing import Annotated
 from fastapi import FastAPI, Form, Request, UploadFile
@@ -31,8 +32,10 @@ from fastapi.templating import Jinja2Templates
 
 import eark_validator.packages as PACKAGES
 from eark_validator.specifications.specification import SpecificationVersion
+from eark_validator.model import ValidationReport
 
 from app.utils import ResultSummary, get_temp_ip_path
+import app.java_runner as JR
 
 from .routers import about, validation
 
@@ -40,8 +43,10 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(about.router)
 app.include_router(validation.router)
+LOG = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="templates")
+
 
 @app.get("/", tags=["validate"], response_class=HTMLResponse)
 async def read_home(request: Request):
@@ -56,9 +61,38 @@ async def eark_validate(request: Request, sha1: Annotated[str, Form()], ip_file:
     if not ip_file:
         raise HTTPException(status_code=400, detail="No file upload.")
     package = get_temp_ip_path(ip_file.file, ip_file.filename)
+    python_report: ValidationReport = PACKAGES.PackageValidator(package, SpecificationVersion.V2_1_0).validation_report
+    java_report = java_validate(package)
     context = {
         'python_report': PACKAGES.PackageValidator(package, SpecificationVersion.V2_1_0).validation_report,
         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        'python_summary': ResultSummary(PACKAGES.PackageValidator(package, SpecificationVersion.V2_1_0).validation_report)
+        'python_summary': ResultSummary(python_report),
+        'java_report': java_report,
+        'java_summary': ResultSummary(java_report),
+        'compliance': _compliance(python_report, java_report)
     }
-    return templates.TemplateResponse(request=request, context=context, name="dual_result.html")
+    return templates.TemplateResponse(request=request, context=context, name="result.html")
+
+def _compliance(python_report: ValidationReport, java_report: ValidationReport) -> str:
+    if python_report.is_valid != java_report.is_valid:
+        return 'CONFLICTED'
+    elif python_report.is_valid:
+        return 'VALID'
+    return 'INVALID'
+
+def java_validate(package=None) -> ValidationReport:  # noqa: E501
+    """Synchronous package valdition.
+
+    Upload a package binary for validation and return validation result immediately. # noqa: E501
+
+    :param sha1:
+    :type sha1: str
+    :param ip_file:
+    :type ip_file: strstr
+
+    :rtype: ValidationReport
+    """
+    ret_code, java_report, stderr = JR.validate_ip(package)
+    if ret_code != 0:
+        LOG.error("Java Runner failed, ret_code: %d, stderr: %s", ret_code, stderr)
+    return java_report
