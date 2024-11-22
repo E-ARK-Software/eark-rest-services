@@ -38,7 +38,7 @@ RUN addgroup -S eark-rest && adduser --system -D --home /opt/eark-rest -G eark-r
 RUN mkdir --parents /opt/eark-rest && chown -R eark-rest:eark-rest /opt/eark-rest
 
 # Get the commons-ip jar
-ADD --link https://github.com/keeps/commons-ip/releases/download/2.8.0/commons-ip2-cli-2.8.0.jar /opt/eark-rest/commons-ip/commons-ip2-cli-2.8.0.jar
+ADD --link https://github.com/keeps/commons-ip/releases/download/2.8.1/commons-ip2-cli-2.8.1.jar /opt/eark-rest/commons-ip/commons-ip2-cli-2.8.1.jar
 RUN chown -R eark-rest:eark-rest /opt/eark-rest/commons-ip
 
 # Work as the unprivileged user now
@@ -53,4 +53,4 @@ COPY ./templates /opt/eark-rest/templates
 COPY ./app /opt/eark-rest/app
 
 ENTRYPOINT [ "dumb-init", "--" ]
-CMD ["/opt/eark-rest/.local/bin/fastapi", "run", "/opt/eark-rest/app/main.py", "--port", "80"]
+CMD ["/opt/eark-rest/.local/bin/fastapi", "run", "/opt/eark-rest/app/main.py"]
