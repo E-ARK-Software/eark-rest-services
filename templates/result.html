@@ -12,7 +12,7 @@
   <li class="nav-item" role="presentation">
     <a class="nav-link active" id="java-tab" data-toggle="tab" href="#java" role="tab" aria-controls="java" aria-selected="true">
     {% if java_summary is defined %}
-      <h3>Commons-ip Validator: {{ validation_badge(java_summary.result) }}
+      <h3>Commons-ip v{{ commons_ip }}: {{ validation_badge(java_summary.result) }}
       {% if java_summary.errors is defined %}{{ rule_summary(java_summary.errors, "errors") }}{% endif %}
       {% if java_summary.warnings is defined %}{{ rule_summary(java_summary.warnings, "warnings") }}{% endif %}
       {% if java_summary.infos is defined %}{{ rule_summary(java_summary.infos, "notes") }}{% endif %}</h3>
@@ -24,7 +24,7 @@
   <li class="nav-item" role="presentation">
     <a class="nav-link" id="python-tab" data-toggle="tab" href="#python" role="tab" aria-controls="python" aria-selected="false">
     {% if python_summary is defined %}
-      <h3>PyIP Validator: {{ validation_badge(python_summary.result) }}
+      <h3>E-ARK v{{ eark_validator }}: {{ validation_badge(python_summary.result) }}
       {% if python_summary.errors is defined %}{{ rule_summary(python_summary.errors, "errors") }}{% endif %}
       {% if python_summary.warnings is defined %}{{ rule_summary(python_summary.warnings, "warnings") }}{% endif %}
       {% if python_summary.infos is defined %}{{ rule_summary(python_summary.infos, "notes") }}{% endif %}</h3>

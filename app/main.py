@@ -25,11 +25,12 @@
 import logging
 from datetime import datetime
 from typing import Annotated
-from fastapi import FastAPI, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from eark_validator.cli.app import __version__ as version
 import eark_validator.packages as PACKAGES
 from eark_validator.specifications.specification import SpecificationVersion
 from eark_validator.model import ValidationReport
@@ -38,6 +39,7 @@ from app.utils import ResultSummary, get_temp_ip_path
 import app.java_runner as JR
 
 from .routers import about, validation
+from . import config
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -49,15 +51,19 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/", tags=["validate"], response_class=HTMLResponse)
-async def read_home(request: Request):
-    return templates.TemplateResponse(request=request, name="home.html")
+async def read_home(request: Request, settings: Annotated[config.AppConfig, Depends(about.get_settings)]):
+    context = {
+        'eark_validator': version,
+        'commons_ip': settings.commons_ip_version
+    }
+    return templates.TemplateResponse(request=request, context=context, name="home.html")
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return RedirectResponse('/static/favicon.ico')
 
 @app.post("/validate", tags=["eark-validator", "commons-ip", "validate"], response_class=HTMLResponse)
-async def eark_validate(request: Request, sha1: Annotated[str, Form()], ip_file: UploadFile):
+async def eark_validate(request: Request, sha1: Annotated[str, Form()], ip_file: UploadFile,  settings: Annotated[config.AppConfig, Depends(about.get_settings)]):
     if not ip_file:
         raise HTTPException(status_code=400, detail="No file upload.")
     package = get_temp_ip_path(ip_file.file, ip_file.filename)
@@ -69,7 +75,9 @@ async def eark_validate(request: Request, sha1: Annotated[str, Form()], ip_file:
         'python_summary': ResultSummary(python_report),
         'java_report': java_report,
         'java_summary': ResultSummary(java_report),
-        'compliance': _compliance(python_report, java_report)
+        'compliance': _compliance(python_report, java_report),
+        'eark_validator': version,
+        'commons_ip': settings.commons_ip_version
     }
     return templates.TemplateResponse(request=request, context=context, name="result.html")
 

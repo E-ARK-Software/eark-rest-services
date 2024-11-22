@@ -22,8 +22,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os
 from pathlib import Path
+from hashlib import sha1
 import tempfile
 from typing import Generator
 
@@ -31,16 +31,21 @@ from eark_validator.model import StructureStatus, ValidationReport
 from eark_validator.model.validation_report import MetadataStatus, Result, Severity  # noqa: E501
 
 TEMP = tempfile.gettempdir()
-UPLOADS_TEMP = os.path.join(TEMP, 'ip-uploads')
-if not os.path.isdir(UPLOADS_TEMP):
-    os.makedirs(UPLOADS_TEMP)
+UPLOADS_TEMP = Path(TEMP) / 'ip-uploads'
+if not UPLOADS_TEMP.is_dir():
+   UPLOADS_TEMP.mkdir(exist_ok=True)
 ALLOWED_EXTENSIONS = {'zip', 'tar', 'gz', 'gzip'}
 
 def get_temp_ip_path(spooled_file: tempfile.SpooledTemporaryFile, filename: str) -> Path:
-    with open(os.path.join(UPLOADS_TEMP, filename), 'wb') as f:
+    temp_path = UPLOADS_TEMP / filename
+    digest = sha1()
+    with open(temp_path, 'wb') as f:
         for chunk in chunk_file(spooled_file):
+            digest.update(chunk)
             f.write(chunk)
-    return Path(os.path.join(UPLOADS_TEMP, filename))
+    hex_path = UPLOADS_TEMP / (digest.hexdigest() + Path(filename).suffix)
+    temp_path.rename(hex_path)
+    return hex_path
         
 def chunk_file(file: tempfile.SpooledTemporaryFile, buff_size=4096) -> Generator:
     while True:

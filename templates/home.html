@@ -8,10 +8,11 @@
       <div class="media-body">
         <h1 class="media-heading">E-ARK Information Package Validation</h1>
       </div>
+      <p class="lead">This service provides E-ARK information package validation against the E-ARK SIP specification,
+        using v{{ eark_validator }} of the eark-validator and v{{ commons_ip }} of the commons-ip validator.</p>
     </div>
-    <div class="row">
-      <div class="col"></div>
-      <div class="col-8">
+    <div class="row justify-content-center">
+      <div class="col">
         <h2>Choose an information package:</h2>
         <form id="frm-validate" action="validate" method="post" enctype="multipart/form-data" encoding="multipart/form-data">
           <div class="custom-file">
@@ -20,7 +21,6 @@
             <span id="file-desc">Upload an E-ARK information package in zip, tar, or tar.gz formats.</span>
           </div>
           <div class="form-group">
-            <label for="sha1">Package SHA-1: </label>
             <input name="sha1" type="text" class="form-control"  placeholder="SHA-1 hash of selected file." readonly >
             <span id="sha-desc">This is calculated in your browser and used to ensure the package upload is error free.</span>
           </div>
@@ -28,7 +28,6 @@
           <p id="upload-desc">Upload the information package for validation. The maximum upload size limit is currently 40MB.</p>
         </form>
       </div>
-      <div class="col"></div>
     </div><!-- end row -->
 {% endblock page_content %}
 {% block page_script %}
