@@ -25,5 +25,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class AppConfig(BaseSettings):
+    commons_ip_version: str = ""
     commons_ip_path: str = ""
     model_config = SettingsConfigDict(env_file=".env")
