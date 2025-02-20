@@ -2,7 +2,7 @@
 {% block title %}Home{% endblock %}
 {% block page_content %}
 <h1>E-ARK IP Online Validator</h1>
-{% if python_report is defined %}
+{% if python_report.package.details is defined %}
 <p>Package: {{ python_report.package.details.name }}</p>
 {% endif %}
 <p>Uploaded On: {{ timestamp }}</p>

@@ -58,7 +58,7 @@ class ResultSummary():
     def __init__(self, report: ValidationReport):
         self.errors, self.warnings, self.infos = _get_message_summary(report)
         self.structure_status = report.structure.status
-        self.metadata_status = MetadataStatus.VALID if (report.metadata.schema_results.status == report.metadata.schematron_results.status == MetadataStatus.VALID) else MetadataStatus.INVALID
+        self.metadata_status = MetadataStatus.VALID if ((report.metadata != None) and report.metadata.schema_results.status == report.metadata.schematron_results.status == MetadataStatus.VALID) else MetadataStatus.INVALID
         self.schema = report.metadata.schema_results.messages if report.metadata and report.metadata.schema_results else None
         self.schematron = report.metadata.schematron_results.messages if report.metadata and report.metadata.schematron_results else None
 
