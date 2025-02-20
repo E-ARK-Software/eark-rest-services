@@ -24,11 +24,14 @@
 #
 from pathlib import Path
 from hashlib import sha1
+import shutil
 import tempfile
+import zipfile
 from typing import Generator
 
 from eark_validator.model import StructureStatus, ValidationReport
 from eark_validator.model.validation_report import MetadataStatus, Result, Severity  # noqa: E501
+from eark_validator.infopacks.package_handler import PackageHandler
 
 TEMP = tempfile.gettempdir()
 UPLOADS_TEMP = Path(TEMP) / 'ip-uploads'
@@ -43,8 +46,14 @@ def get_temp_ip_path(spooled_file: tempfile.SpooledTemporaryFile, filename: str)
         for chunk in chunk_file(spooled_file):
             digest.update(chunk)
             f.write(chunk)
-    hex_path = UPLOADS_TEMP / (digest.hexdigest() + Path(filename).suffix)
-    temp_path.rename(hex_path)
+    if (PackageHandler.is_archive(temp_path) and not zipfile.is_zipfile(temp_path)):
+        package_handler = PackageHandler()
+        temp_path = package_handler.unpack_package(temp_path, UPLOADS_TEMP)
+        hex_path = UPLOADS_TEMP / digest.hexdigest()
+    else:
+        hex_path = UPLOADS_TEMP / (digest.hexdigest() + Path(filename).suffix)
+    if (not hex_path.exists()):
+        temp_path.rename(hex_path)
     return hex_path
         
 def chunk_file(file: tempfile.SpooledTemporaryFile, buff_size=4096) -> Generator:
